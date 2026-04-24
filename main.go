@@ -110,7 +110,7 @@ func (m *kurama) Update() error {
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			m.waiting = !m.waiting
 		}
-		ebiten.SetWindowPosition(int(math.Round(m.x)), int(math.Round(m.y)))
+		setWindowGlobalPosition(m.x, m.y, float64(windowHeight))
 		return nil
 	}
 
@@ -118,7 +118,7 @@ func (m *kurama) Update() error {
 		m.playSound("awake")
 	}
 	m.catchCursor(dx, dy, distanceToCursor)
-	ebiten.SetWindowPosition(int(math.Round(m.x)), int(math.Round(m.y)))
+	setWindowGlobalPosition(m.x, m.y, float64(windowHeight))
 	return nil
 }
 
