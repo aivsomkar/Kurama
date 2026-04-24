@@ -1,6 +1,6 @@
-# Welcome to the Neko contribution guide.
+# Welcome to the Kurama contribution guide.
 
-Thank you for being so interested in contributing to Neko! We welcome contributions from the community to help make this project better. By contributing, you are helping us improve and grow this software.
+Thank you for being so interested in contributing to Kurama! We welcome contributions from the community to help make this project better. By contributing, you are helping us improve and grow this software.
 
 Please take a moment to review this document to understand how you can contribute and be a part of our open-source community.
 
@@ -14,11 +14,11 @@ Please take a moment to review this document to understand how you can contribut
 
 ## Getting Started
 
-- Fork the Neko repository on GitHub.
+- Fork the Kurama repository on GitHub.
 - Clone your fork to your local machine:
 
 ```bash
-git clone https://github.com/yourusername/neko.git
+git clone https://github.com/aivsomkar/Kurama.git
 ```
 
 - Create a new branch for your contributions:
@@ -40,11 +40,11 @@ git commit -m "Add feature X"
 git push origin my-feature-branch
 ```
 
-Create a pull request from your fork to the main Neko repository on GitHub.
+Create a pull request from your fork to the main Kurama repository on GitHub.
 
 ## How to Contribute
 
-You can contribute to Neko in various ways:
+You can contribute to Kurama in various ways:
 
 - Add new features.
 - Fix bugs and issues.
@@ -66,4 +66,3 @@ When submitting a pull request, please follow these guidelines:
 ## Reporting Issues
 
 If you find a bug or have a feature request, please open an issue on the GitHub repository. When reporting issues, please provide as much detail as possible, including your operating system, browser, and a step-by-step description of the problem.
-
