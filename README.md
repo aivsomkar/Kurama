@@ -16,6 +16,10 @@ Forked from [crgimenes/neko](https://github.com/crgimenes/neko) and rebuilt with
 
 ---
 
+<p align="center">
+  <img src="fixtures/kurama.gif" width="400" alt="Kurama in action" />
+</p>
+
 ## Features
 
 - **Follows your cursor** across your entire screen
