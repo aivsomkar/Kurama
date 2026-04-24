@@ -12,5 +12,4 @@
     - https://evertpot.com/neko/
     - https://eliotakira.com/neko/
 
-![sprites](sprites.png)
 
