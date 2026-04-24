@@ -29,8 +29,14 @@ static void applyAllSpaces(void) {
 
 // Called once from Go. Schedules an NSTimer on the main run loop so it
 // fires reliably every 2 s regardless of GCD queue draining.
+//
+// Also switches the process activation policy to Accessory. Without this,
+// the app is a regular foreground app, and macOS will hide its windows
+// when another app enters full-screen mode — FullScreenAuxiliary only
+// floats windows into full-screen Spaces for accessory/background apps.
 void setWindowOnAllSpaces(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
         applyAllSpaces();
         [NSTimer scheduledTimerWithTimeInterval:2.0
                                         repeats:YES

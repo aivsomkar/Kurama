@@ -85,53 +85,40 @@ func (m *kurama) playSound(soundName string) {
 	m.currentPlayer.Play()
 }
 
-func absInt(v int) int {
-	if v < 0 {
-		return -v
-	}
-	return v
-}
-
 func (m *kurama) Update() error {
 	m.count++
 	if m.state == 10 && m.count == m.min {
 		m.playSound("idle3")
 	}
 
-	// Use global cursor position so fox follows across monitors and Spaces
+	// Global cursor position so the fox can follow across monitors and Spaces.
 	cursorX, cursorY := globalCursorPosition()
 
-	// Clamp window to total virtual desktop area
+	// Fox center in screen coordinates. Use the actual window size so this
+	// stays correct when KURAMA_SCALE != 1.0.
 	windowWidth, windowHeight := ebiten.WindowSize()
-	totalW, totalH := 0, 0
-	for _, mon := range ebiten.AppendMonitors(nil) {
-		w, h := mon.Size()
-		totalW += w
-		if h > totalH {
-			totalH = h
-		}
-	}
-	m.x = max(0, min(m.x, float64(totalW-windowWidth)))
-	m.y = max(0, min(m.y, float64(totalH-windowHeight)))
-	ebiten.SetWindowPosition(int(math.Round(m.x)), int(math.Round(m.y)))
+	halfWidth := float64(windowWidth) / 2
+	halfHeight := float64(windowHeight) / 2
 
-	// Cursor offset relative to fox center in screen coordinates
-	x := int(cursorX - m.x) - (width / 2)
-	y := int(cursorY - m.y) - (height / 2)
+	dx := cursorX - (m.x + halfWidth)
+	dy := cursorY - (m.y + halfHeight)
+	distanceToCursor := math.Hypot(dx, dy)
+	m.distance = int(distanceToCursor)
 
-	m.distance = absInt(x) + absInt(y)
-	if m.distance < idleRadius || m.waiting {
+	if distanceToCursor < float64(idleRadius) || m.waiting {
 		m.stayIdle()
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			m.waiting = !m.waiting
 		}
+		ebiten.SetWindowPosition(int(math.Round(m.x)), int(math.Round(m.y)))
 		return nil
 	}
 
 	if m.state >= 16 {
 		m.playSound("awake")
 	}
-	m.catchCursor(x, y)
+	m.catchCursor(dx, dy, distanceToCursor)
+	ebiten.SetWindowPosition(int(math.Round(m.x)), int(math.Round(m.y)))
 	return nil
 }
 
@@ -169,43 +156,57 @@ func (m *kurama) stayIdle() {
 	}
 }
 
-func (m *kurama) catchCursor(x, y int) {
+func (m *kurama) catchCursor(dx, dy, distanceToCursor float64) {
 	m.state = 0
 	m.min = 8
 	m.max = 16
 
-	// get mouse direction
-	r := math.Atan2(float64(y), float64(x))
-	a := math.Mod((r/math.Pi*180)+360, 360) // Normazing angle to [0, 360)
+	if distanceToCursor <= 0 {
+		return
+	}
 
+	// Taper speed as the fox approaches the cursor. Full configured speed
+	// when the cursor is >= 2 * idleRadius away, and smoothly down to zero
+	// as it nears the idle-radius boundary. This eliminates the overshoot
+	// that caused the fox to oscillate around the cursor.
+	taperStart := float64(idleRadius)
+	taperEnd := 2.0 * float64(idleRadius)
+	taper := (distanceToCursor - taperStart) / (taperEnd - taperStart)
+	if taper < 0 {
+		taper = 0
+	}
+	if taper > 1 {
+		taper = 1
+	}
+	speed := m.cfg.Speed * taper
+
+	// Move along the exact cursor vector instead of snapping movement to
+	// one of 8 cardinal directions. Prevents zig-zag when approaching at
+	// off-axis angles.
+	m.x += (dx / distanceToCursor) * speed
+	m.y += (dy / distanceToCursor) * speed
+
+	// Sprite selection is still quantised to 8 directions since we only
+	// have 8 directional sprite sets. The chosen sprite tracks the real
+	// movement vector, which is visually continuous.
+	angleRadians := math.Atan2(dy, dx)
+	angleDegrees := math.Mod((angleRadians/math.Pi*180)+360, 360)
 	switch {
-	case a <= 292.5 && a > 247.5: // up
-		m.y -= m.cfg.Speed
+	case angleDegrees <= 292.5 && angleDegrees > 247.5:
 		m.sprite = "up"
-	case a <= 337.5 && a > 292.5: // up right
-		m.x += m.cfg.Speed / math.Sqrt2
-		m.y -= m.cfg.Speed / math.Sqrt2
+	case angleDegrees <= 337.5 && angleDegrees > 292.5:
 		m.sprite = "upright"
-	case a <= 22.5 || a > 337.5: // right
-		m.x += m.cfg.Speed
+	case angleDegrees <= 22.5 || angleDegrees > 337.5:
 		m.sprite = "right"
-	case a <= 67.5 && a > 22.5: // down right
-		m.x += m.cfg.Speed / math.Sqrt2
-		m.y += m.cfg.Speed / math.Sqrt2
+	case angleDegrees <= 67.5 && angleDegrees > 22.5:
 		m.sprite = "downright"
-	case a <= 112.5 && a > 67.5: // down
-		m.y += m.cfg.Speed
+	case angleDegrees <= 112.5 && angleDegrees > 67.5:
 		m.sprite = "down"
-	case a <= 157.5 && a > 112.5: // down left
-		m.x -= m.cfg.Speed / math.Sqrt2
-		m.y += m.cfg.Speed / math.Sqrt2
+	case angleDegrees <= 157.5 && angleDegrees > 112.5:
 		m.sprite = "downleft"
-	case a <= 202.5 && a > 157.5: // left
-		m.x -= m.cfg.Speed
+	case angleDegrees <= 202.5 && angleDegrees > 157.5:
 		m.sprite = "left"
-	case a <= 247.5 && a > 202.5: // up left
-		m.x -= m.cfg.Speed / math.Sqrt2
-		m.y -= m.cfg.Speed / math.Sqrt2
+	case angleDegrees <= 247.5 && angleDegrees > 202.5:
 		m.sprite = "upleft"
 	}
 }
